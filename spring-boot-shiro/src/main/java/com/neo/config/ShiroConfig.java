@@ -5,7 +5,6 @@ import org.apache.shiro.mgt.SecurityManager;
 import org.apache.shiro.spring.security.interceptor.AuthorizationAttributeSourceAdvisor;
 import org.apache.shiro.spring.web.ShiroFilterFactoryBean;
 import org.apache.shiro.web.mgt.DefaultWebSecurityManager;
-import org.apache.shiro.web.servlet.SimpleCookie;
 import org.apache.shiro.web.session.mgt.DefaultWebSessionManager;
 import org.crazycake.shiro.RedisCacheManager;
 import org.crazycake.shiro.RedisManager;
@@ -40,7 +39,6 @@ public class ShiroConfig implements EnvironmentAware {
 		ShiroFilterFactoryBean shiroFilterFactoryBean = new ShiroFilterFactoryBean();
 		shiroFilterFactoryBean.setSecurityManager(securityManager);
 
-		//没有登录的用户只能访问登录接口的页面
 		// 如果不设置默认会自动寻找Web工程根目录下的"/login.jsp"页面
 		shiroFilterFactoryBean.setLoginUrl("/login");//这里的是login的rest接口
 		// 登录成功后要跳转的链接
@@ -110,6 +108,7 @@ public class ShiroConfig implements EnvironmentAware {
 		return redisSessionDAO;
 	}
 
+	//缓存管理器
 	@Bean
 	public RedisCacheManager cacheManager(){
 		RedisCacheManager cacheManager = new RedisCacheManager();
@@ -121,18 +120,8 @@ public class ShiroConfig implements EnvironmentAware {
 	public DefaultWebSessionManager sessionManager(){
 		//跨域session共享
 //		DefaultWebSessionManager sessionManager = new DefaultWebSessionManager();
-//
-//		sessionManager.setSessionDAO(sessionDAO());
-
-//		SimpleCookie simpleCookie = new SimpleCookie("token");
-//		simpleCookie.setPath("/");
-//		simpleCookie.setHttpOnly(false);
 		SessionManager sessionManager = new SessionManager();
 		sessionManager.setSessionDAO(sessionDAO());
-//		sessionManager.setSessionIdCookieEnabled(false);
-//		sessionManager.setSessionIdUrlRewritingEnabled(false);
-//		sessionManager.setDeleteInvalidSessions(true);
-//		sessionManager.setSessionIdCookie(simpleCookie);
 		return  sessionManager;
 	}
 
@@ -144,6 +133,7 @@ public class ShiroConfig implements EnvironmentAware {
 		securityManager.setCacheManager(cacheManager());
 		// 自定义session管理 使用redis
 		securityManager.setSessionManager(sessionManager());
+		//有说法securityManager.setRealm放在最后，否则可能会出现无法调用权限认证方法
 		securityManager.setRealm(myShiroRealm());
 		return securityManager;
 	}
@@ -169,8 +159,6 @@ public class ShiroConfig implements EnvironmentAware {
 
 	/**
 	 * 限制同一账号登录同时登录人数控制
-	 *
-	 * @return
 	 */
 	@Bean
 	public KickoutSessionControlFilter kickoutSessionControlFilter() {
@@ -179,7 +167,7 @@ public class ShiroConfig implements EnvironmentAware {
 		kickoutSessionControlFilter.setSessionManager(sessionManager());
 		kickoutSessionControlFilter.setKickoutAfter(false);
 		kickoutSessionControlFilter.setMaxSession(1);
-		kickoutSessionControlFilter.setKickoutUrl("/kickout");
+		kickoutSessionControlFilter.setKickoutUrl("/kickout");//这里的是rest接口
 		return kickoutSessionControlFilter;
 	}
 
